@@ -200,33 +200,31 @@ alert("API Success");
         {loading ? "Signing In..." : "Login"}
       </button>
 
-      <p className="text-center text-gray-400 text-sm">
+<div className="text-center text-gray-400 text-sm">
+  <p>
+    Don't have an account?{" "}
+    <Link
+      to="/register"
+      className="text-cyan-400 hover:underline"
+    >
+      Register
+    </Link>
+  </p>
 
-        Don't have an account?{" "}
+  <div className="relative my-6">
+    <div className="absolute inset-0 flex items-center">
+      <div className="w-full border-t border-slate-700"></div>
+    </div>
 
-        <Link
-          to="/register"
-          className="text-cyan-400 hover:underline"
-        >
-            <div className="relative">
-
-  <div className="absolute inset-0 flex items-center">
-    <div className="w-full border-t border-slate-700"></div>
+    <div className="relative flex justify-center text-sm">
+      <span className="bg-slate-900 px-4 text-gray-400">
+        OR
+      </span>
+    </div>
   </div>
 
-  <div className="relative flex justify-center text-sm">
-    <span className="bg-slate-900 px-4 text-gray-400">
-      OR
-    </span>
-  </div>
-
+  <GoogleButton text="Continue with Google" />
 </div>
-
-<GoogleButton text="Continue with Google" />
-          Register
-        </Link>
-
-      </p>
 
     </form>
 

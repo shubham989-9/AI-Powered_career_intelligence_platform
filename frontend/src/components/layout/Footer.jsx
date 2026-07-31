@@ -2,7 +2,10 @@ import { FaGithub, FaLinkedin, FaEnvelope } from "react-icons/fa";
 
 function Footer() {
   return (
-    <footer className="bg-slate-900 border-t border-slate-800">
+    <footer
+  id="contact"
+  className="bg-slate-900 border-t border-slate-800"
+>
       <div className="max-w-7xl mx-auto px-6 py-12">
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-6">

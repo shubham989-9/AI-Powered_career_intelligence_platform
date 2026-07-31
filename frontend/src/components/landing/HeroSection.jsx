@@ -1,7 +1,12 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
-
+import { useNavigate } from "react-router-dom";
+<section
+  id="home"
+  className="relative min-h-screen bg-slate-950 flex items-center overflow-hidden"
+></section>
 function HeroSection() {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen bg-slate-950 flex items-center overflow-hidden">
 
@@ -50,21 +55,26 @@ function HeroSection() {
 
           <div className="flex gap-5 mt-10">
 
-            <button className="bg-cyan-500 hover:bg-cyan-400 transition px-8 py-4 rounded-xl font-semibold flex items-center gap-2">
+  <button
+    onClick={() => navigate("/register")}
+    className="bg-cyan-500 hover:bg-cyan-400 transition px-8 py-4 rounded-xl font-semibold flex items-center gap-2"
+  >
+    Get Started
+    <ArrowRight size={18} />
+  </button>
 
-              Get Started
+  <button
+    onClick={() => {
+      document
+        .getElementById("features")
+        ?.scrollIntoView({ behavior: "smooth" });
+    }}
+    className="border border-slate-700 hover:border-cyan-400 transition px-8 py-4 rounded-xl"
+  >
+    Learn More
+  </button>
 
-              <ArrowRight size={18} />
-
-            </button>
-
-            <button className="border border-slate-700 hover:border-cyan-400 transition px-8 py-4 rounded-xl">
-
-              Learn More
-
-            </button>
-
-          </div>
+</div>
 
         </motion.div>
 

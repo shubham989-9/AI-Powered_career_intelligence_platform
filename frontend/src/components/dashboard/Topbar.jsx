@@ -1,4 +1,17 @@
-import { Bell, Search, UserCircle2 } from "lucide-react";
+import {
+  LayoutDashboard,
+  User,
+  FileText,
+  Brain,
+  Briefcase,
+  TrendingUp,
+  MessageSquare,
+  Settings,
+  LogOut,
+  Bell,
+  Search,
+  UserCircle2,
+} from "lucide-react";
 
 function Topbar() {
 
@@ -12,6 +25,10 @@ function Topbar() {
         <h2 className="text-3xl font-bold text-white">
           Dashboard
         </h2>
+        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition">
+  <User size={20} />
+  Profile
+</button>
 
         <p className="text-gray-400 mt-1">
           Welcome back, {user?.name || "User"} 👋

@@ -1,8 +1,25 @@
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 function CTASection() {
+
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      navigate("/dashboard");
+    } else {
+      navigate("/register");
+    }
+
+  };
+
   return (
     <section className="py-24 bg-slate-950">
+
       <div className="max-w-5xl mx-auto px-6">
 
         <div className="rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-600 p-16 text-center shadow-2xl">
@@ -16,17 +33,18 @@ function CTASection() {
             accelerate their career journey.
           </p>
 
-          <button className="bg-white text-slate-900 px-8 py-4 rounded-xl font-semibold inline-flex items-center gap-2 hover:scale-105 transition">
-
+          <button
+            onClick={handleGetStarted}
+            className="bg-white text-slate-900 px-8 py-4 rounded-xl font-semibold inline-flex items-center gap-2 hover:scale-105 transition"
+          >
             Get Started
-
             <ArrowRight size={18} />
-
           </button>
 
         </div>
 
       </div>
+
     </section>
   );
 }

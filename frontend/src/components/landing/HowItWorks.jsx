@@ -25,7 +25,10 @@ const steps = [
 
 function HowItWorks() {
   return (
-    <section className="py-24 bg-slate-900">
+    <section
+  id="about"
+  className="py-24 bg-slate-900"
+>
       <div className="max-w-7xl mx-auto px-6">
 
         <h2 className="text-4xl font-bold text-center mb-4">

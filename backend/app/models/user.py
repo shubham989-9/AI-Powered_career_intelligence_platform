@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -10,10 +11,22 @@ class User(Base):
 
     full_name = Column(String(100), nullable=False)
 
-    email = Column(String(100), unique=True, index=True, nullable=False)
+    email = Column(
+        String(100),
+        unique=True,
+        index=True,
+        nullable=False
+    )
 
     password = Column(String(255), nullable=False)
 
     role = Column(String(30), nullable=False)
 
     is_active = Column(Boolean, default=True)
+
+    profile = relationship(
+        "Profile",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete"
+    )
