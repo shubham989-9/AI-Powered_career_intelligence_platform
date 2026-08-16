@@ -3,6 +3,7 @@ uvicorn
 sqlalchemy
 pg8000
 pydantic
+email-validator
 python-jose[cryptography]
 passlib
 bcrypt==4.0.1
