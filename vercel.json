@@ -1,18 +1,16 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/backend/app/main.py"
+      "source": "/auth/(.*)",
+      "destination": "/api/index.py"
     },
     {
-      "source": "/auth/(.*)",
-      "destination": "/backend/app/main.py"
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/frontend/dist/$1"
     }
   ]
 }
