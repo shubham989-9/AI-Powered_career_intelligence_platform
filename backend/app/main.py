@@ -71,7 +71,7 @@ from app.routers import admin_feedback
 # =========================================================
 
 app = FastAPI(
-    title="CareerAI API",
+    title="AI-Powered Career Intelligence Platform",
     version="1.0.0"
 )
 
@@ -81,7 +81,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex="https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

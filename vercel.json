@@ -11,7 +11,15 @@
       "destination": "https://career-api-4nux.onrender.com/api/:path*"
     },
     {
-      "source": "/((?!auth|api).*)",
+      "source": "/users/:path*",
+      "destination": "https://career-api-4nux.onrender.com/users/:path*"
+    },
+    {
+      "source": "/resume/:path*",
+      "destination": "https://career-api-4nux.onrender.com/resume/:path*"
+    },
+    {
+      "source": "/((?!auth|api|users|resume).*)",
       "destination": "/index.html"
     }
   ]
