@@ -23,15 +23,11 @@
       "dest": "/api/index.py"
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/frontend/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(?:js|css|ico|png|jpg|jpeg|svg|woff2|woff|ttf|json))",
+      "src": "^/(.*)$",
       "dest": "/frontend/$1"
     },
     {
-      "src": "/(.*)",
+      "src": "/.*",
       "dest": "/frontend/index.html"
     }
   ]
