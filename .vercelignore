@@ -5,6 +5,7 @@ venv/
 env/
 
 # Node dependencies
+frontend/
 frontend/node_modules/
 node_modules/
 
