@@ -1,9 +1,9 @@
-import axios from "axios";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import GoogleButton from "./GoogleButton";
+import api from "../../api";
 
 function RegisterForm() {
   const navigate = useNavigate();
@@ -25,13 +25,12 @@ function RegisterForm() {
     try {
       setLoading(true);
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/auth/register",
+      const response = await api.post(
+  "/auth/register",
         {
           full_name: data.fullName,
           email: data.email,
           password: data.password,
-          role: data.role,
         }
       );
 
@@ -222,35 +221,6 @@ function RegisterForm() {
         {errors.confirmPassword && (
           <p className="text-red-400 text-sm mt-1">
             {errors.confirmPassword.message}
-          </p>
-        )}
-
-      </div>
-
-      {/* Role */}
-
-      <div>
-
-        <label className="block mb-2 text-sm">
-          Select Role
-        </label>
-
-        <select
-          {...register("role", {
-            required: "Please select a role",
-          })}
-          className="w-full rounded-lg bg-slate-800 border border-slate-700 px-4 py-3 outline-none focus:border-cyan-400"
-        >
-          <option value="">Select Role</option>
-          <option value="Student">Student</option>
-          <option value="Professional">Professional</option>
-          <option value="Recruiter">Recruiter</option>
-          <option value="Admin">Admin</option>
-        </select>
-
-        {errors.role && (
-          <p className="text-red-400 text-sm mt-1">
-            {errors.role.message}
           </p>
         )}
 

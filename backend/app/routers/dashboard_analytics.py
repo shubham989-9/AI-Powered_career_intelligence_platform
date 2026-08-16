@@ -16,6 +16,9 @@ from app.services.career_recommendation import (
 from app.services.course_recommendation import (
     recommend_courses
 )
+from app.services.salary_prediction import (
+    predict_salary
+)
 from app.services.dashboard_analytics import (
     build_dashboard_analytics
 )
@@ -89,29 +92,66 @@ def get_dashboard_analytics(
     recommended_careers = []
     recommended_courses = []
 
+    salary_prediction = {
+        "estimated_min": 0,
+        "estimated_max": 0,
+        "market_position": "Developing",
+        "confidence": 0,
+        "insight": (
+            "Upload your resume to get a salary prediction."
+        )
+    }
+
+    # =================================================
+    # Prepare Resume Skills
+    # =================================================
+
+    resume_skills = []
+
+    if resume and resume.extracted_skills:
+
+        resume_skills = [
+            skill.strip()
+            for skill in resume.extracted_skills.split(",")
+            if skill.strip()
+        ]
+
+    # =================================================
+    # Salary Prediction
+    # =================================================
+    # Salary prediction depends only on the resume.
+    # Job Description is NOT required.
+
+    if resume:
+
+        salary_prediction = predict_salary(
+            skills=resume_skills,
+            raw_text=resume.raw_text or ""
+        )
+
     # =================================================
     # Analyze Resume + JD
     # =================================================
 
     if resume and job:
 
-        resume_skills = []
-
-        if resume.extracted_skills:
-            resume_skills = [
-                skill.strip()
-                for skill in resume.extracted_skills.split(",")
-                if skill.strip()
-            ]
+        # ---------------------------------------------
+        # JD Skills
+        # ---------------------------------------------
 
         jd_skills = []
 
         if job.required_skills:
+
             jd_skills = [
                 skill.strip()
                 for skill in job.required_skills.split(",")
                 if skill.strip()
             ]
+
+        # ---------------------------------------------
+        # ATS Analysis
+        # ---------------------------------------------
 
         analysis = analyze_resume_against_jd(
             resume_text=resume.raw_text or "",
@@ -140,7 +180,9 @@ def get_dashboard_analytics(
             "match_percentage": career_result["match_percentage"]
         })
 
-        # Add Alternative Careers
+        # ---------------------------------------------
+        # Alternative Careers
+        # ---------------------------------------------
 
         for career in career_result["alternative_careers"][:2]:
 
@@ -196,7 +238,14 @@ def get_dashboard_analytics(
         matching_skills=matching_skills,
         missing_skills=missing_skills,
         recommended_careers=recommended_careers,
-        recommended_courses=recommended_courses
+        recommended_courses=recommended_courses,
+        salary_prediction=salary_prediction
     )
 
-    return DashboardAnalyticsResponse(**result)
+    # =================================================
+    # Final Response
+    # =================================================
+
+    return DashboardAnalyticsResponse(
+        **result
+    )

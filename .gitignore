@@ -50,3 +50,11 @@ Thumbs.db
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Local backups / temporary project files
+frontend/src_backup/
+frontend/src/api.jsv
+HirePulse-Project-Review.zip
+# Recovery backups
+frontend/src_RECOVERY_BACKUP/
+frontend/src/index_DRAGONFRUIT_BACKUP.css

@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../../api";
 import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 
@@ -87,7 +87,7 @@ function ProfileForm({ onSuccess = () => {} }) {
 
   const loadProfile = async () => {
     try {
-      const response = await axios.get("http://127.0.0.1:8000/profile", {
+      const response = await api.get("/profile", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -103,8 +103,8 @@ function ProfileForm({ onSuccess = () => {} }) {
 
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/profile/save",
+      const response = await api.post(
+        "/profile/save",
         data,
         {
           headers: {
@@ -113,7 +113,10 @@ function ProfileForm({ onSuccess = () => {} }) {
         }
       );
 
-      alert(response.data.message || "Profile saved successfully");
+      alert(
+        response.data.message ||
+          "Profile saved successfully"
+      );
 
       if (onSuccess) {
         onSuccess();
@@ -126,7 +129,9 @@ function ProfileForm({ onSuccess = () => {} }) {
 
   return (
     <div className="min-h-screen bg-slate-850 text-white p-8">
-      <h1 className="text-3xl font-bold mb-8">Profile Management</h1>
+      <h1 className="text-3xl font-bold mb-8">
+        Profile Management
+      </h1>
 
       {/* Progress */}
       <div className="mb-10 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 p-8">
@@ -161,7 +166,10 @@ function ProfileForm({ onSuccess = () => {} }) {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-12">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="space-y-12"
+      >
         {/* Personal */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
           <h2 className="text-3xl font-bold text-cyan-400 flex items-center gap-3 mb-8">
@@ -225,6 +233,7 @@ function ProfileForm({ onSuccess = () => {} }) {
           <h2 className="text-3xl font-bold text-cyan-400 flex items-center gap-3 mb-8">
             <GraduationCap />
             Education
+
             <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
               Required
             </span>
@@ -270,17 +279,20 @@ function ProfileForm({ onSuccess = () => {} }) {
           <h2 className="text-3xl font-bold text-cyan-400 flex items-center gap-3 mb-8">
             <Briefcase />
             Professional Details
+
             <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-sm">
               Required
             </span>
           </h2>
 
           <div className="space-y-6">
+
             {/* Skills */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs sm:text-sm font-semibold text-cyan-400/90 ml-1">
                 Skills
               </label>
+
               <textarea
                 {...register("skills")}
                 rows={4}
@@ -294,6 +306,7 @@ function ProfileForm({ onSuccess = () => {} }) {
               <label className="text-xs sm:text-sm font-semibold text-cyan-400/90 ml-1">
                 Work / Internship Experience
               </label>
+
               <textarea
                 {...register("experience")}
                 rows={4}
@@ -307,6 +320,7 @@ function ProfileForm({ onSuccess = () => {} }) {
               <label className="text-xs sm:text-sm font-semibold text-cyan-400/90 ml-1">
                 Certifications
               </label>
+
               <textarea
                 {...register("certifications")}
                 rows={4}
@@ -320,6 +334,7 @@ function ProfileForm({ onSuccess = () => {} }) {
               <label className="text-xs sm:text-sm font-semibold text-cyan-400/90 ml-1">
                 Projects
               </label>
+
               <textarea
                 {...register("projects")}
                 rows={4}
@@ -333,6 +348,7 @@ function ProfileForm({ onSuccess = () => {} }) {
               <label className="text-xs sm:text-sm font-semibold text-cyan-400/90 ml-1">
                 Career Interests
               </label>
+
               <textarea
                 {...register("career_interests")}
                 rows={4}
@@ -346,6 +362,7 @@ function ProfileForm({ onSuccess = () => {} }) {
               <label className="text-xs sm:text-sm font-semibold text-cyan-400/90 ml-1">
                 Career Goal
               </label>
+
               <textarea
                 {...register("career_goal")}
                 rows={4}
@@ -353,6 +370,7 @@ function ProfileForm({ onSuccess = () => {} }) {
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white outline-none focus:border-cyan-400 resize-none"
               />
             </div>
+
           </div>
         </div>
 

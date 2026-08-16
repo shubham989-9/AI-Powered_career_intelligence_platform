@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Users, FileCheck, Briefcase, Star } from "lucide-react";
 
 const stats = [
@@ -5,63 +6,101 @@ const stats = [
     icon: Users,
     number: "10K+",
     title: "Students Guided",
+    detail: "Career journeys",
   },
   {
     icon: FileCheck,
     number: "50K+",
     title: "Resumes Analyzed",
+    detail: "Resume intelligence",
   },
   {
     icon: Briefcase,
     number: "500+",
     title: "Career Paths",
+    detail: "Role discovery",
   },
   {
     icon: Star,
     number: "95%",
     title: "Success Rate",
+    detail: "Career confidence",
   },
 ];
 
 function StatsSection() {
   return (
-    <section className="py-24 bg-slate-950">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="relative overflow-hidden bg-[#0d0920] px-6 py-24 text-white lg:px-8">
+      <motion.div
+        animate={{ x: [0, 30, 0] }}
+        transition={{ duration: 13, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute left-1/4 top-10 h-72 w-72 rounded-full bg-fuchsia-500/5 blur-[120px]"
+      />
 
-        <h2 className="text-4xl font-bold text-center mb-4">
-          Platform Impact
-        </h2>
+      <div className="relative mx-auto max-w-7xl">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.55 }}
+          className="mx-auto max-w-2xl text-center"
+        >
+          <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-300">
+            Platform impact
+          </span>
 
-        <p className="text-center text-gray-400 mb-16">
-          Helping students and professionals make smarter career decisions.
-        </p>
+          <h2 className="mt-4 text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">
+            Intelligence that turns
+            <span className="block bg-gradient-to-r from-fuchsia-400 to-cyan-300 bg-clip-text text-transparent">
+              into career momentum.
+            </span>
+          </h2>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+          <p className="mt-4 text-sm leading-6 text-slate-400 sm:text-base">
+            Helping students and professionals make smarter career decisions.
+          </p>
+        </motion.div>
 
-          {stats.map((item) => {
+        <div className="mt-14 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          {stats.map((item, index) => {
             const Icon = item.icon;
 
             return (
-              <div
+              <motion.div
                 key={item.title}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center hover:border-cyan-400 transition duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.06 }}
+                whileHover={{ y: -5 }}
+                className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.025] p-6 text-center transition-all duration-300 hover:border-cyan-400/20 hover:bg-white/[0.045]"
               >
-                <Icon className="mx-auto text-cyan-400 mb-5" size={40} />
+                <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-cyan-400/5 blur-3xl transition group-hover:bg-cyan-400/10" />
 
-                <h3 className="text-4xl font-bold mb-3">
-                  {item.number}
-                </h3>
+                <div className="relative">
+                  <motion.div
+                    whileHover={{ scale: 1.08, rotate: -4 }}
+                    className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-400/15 bg-cyan-400/10"
+                  >
+                    <Icon size={21} className="text-cyan-300" />
+                  </motion.div>
 
-                <p className="text-gray-400">
-                  {item.title}
-                </p>
+                  <h3 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
+                    {item.number}
+                  </h3>
 
-              </div>
+                  <p className="mt-2 text-xs font-bold text-slate-300 sm:text-sm">
+                    {item.title}
+                  </p>
+
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-slate-600">
+                    {item.detail}
+                  </p>
+                </div>
+              </motion.div>
             );
           })}
-
         </div>
-
       </div>
     </section>
   );

@@ -10,7 +10,14 @@ def build_dashboard_analytics(
     missing_skills: List[str],
     recommended_careers: List[Dict],
     recommended_courses: List[Dict],
+    salary_prediction: Dict,
 ):
+    """
+    Build the final dashboard analytics response.
+
+    This service only prepares dashboard data.
+    It does not access the database or FastAPI router.
+    """
 
     # ==========================================
     # Resume Status
@@ -33,6 +40,15 @@ def build_dashboard_analytics(
     )
 
     # ==========================================
+    # Profile Completion
+    # ==========================================
+
+    profile_completion = max(
+        0,
+        min(profile_completion, 100)
+    )
+
+    # ==========================================
     # Final Dashboard Data
     # ==========================================
 
@@ -52,4 +68,6 @@ def build_dashboard_analytics(
         "recommended_careers": recommended_careers,
 
         "recommended_courses": recommended_courses,
+
+        "salary_prediction": salary_prediction,
     }

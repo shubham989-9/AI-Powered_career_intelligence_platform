@@ -12,7 +12,7 @@ function Footer() {
 
           <div>
             <h2 className="text-3xl font-bold text-cyan-400">
-              CareerAI
+              ⚡HirePulse
             </h2>
 
             <p className="text-gray-400 mt-2">

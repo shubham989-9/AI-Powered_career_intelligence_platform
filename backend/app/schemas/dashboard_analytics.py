@@ -22,6 +22,18 @@ class DashboardCourse(BaseModel):
 
 
 # ==========================================
+# Salary Prediction
+# ==========================================
+
+class DashboardSalaryPrediction(BaseModel):
+    estimated_min: int
+    estimated_max: int
+    market_position: str
+    confidence: int
+    insight: str
+
+
+# ==========================================
 # Dashboard Analytics Response
 # ==========================================
 
@@ -40,3 +52,6 @@ class DashboardAnalyticsResponse(BaseModel):
     # Recommendations
     recommended_careers: List[DashboardCareer]
     recommended_courses: List[DashboardCourse]
+
+    # Salary Prediction
+    salary_prediction: DashboardSalaryPrediction

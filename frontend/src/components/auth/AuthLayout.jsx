@@ -38,6 +38,10 @@ function AuthLayout({ title, subtitle, children }) {
               <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
               <span>Career Recommendation</span>
             </div>
+             <div className="flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
+              <span>Resume Building</span>
+            </div>
 
             <div className="flex items-center gap-3">
               <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
