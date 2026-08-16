@@ -1,28 +1,9 @@
-# Virtual environments
 backend/venv/
 venv/
-.venv/
-env/
-
-# Node dependencies
-frontend/
-frontend/node_modules/
 node_modules/
-
-# Python cache & build files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-
-# Uploads & local data
 backend/uploads/
 uploads/
 *.sqlite3
 *.db
-
-# Git & Editor
-.git/
-.vscode/
-.idea/
+__pycache__/
+.env
