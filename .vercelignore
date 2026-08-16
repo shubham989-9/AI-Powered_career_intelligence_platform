@@ -7,3 +7,7 @@ uploads/
 *.db
 __pycache__/
 .env
+api/
+backend/
+requirements.txt
+.python-version
