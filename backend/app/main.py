@@ -1,5 +1,5 @@
 import time
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
@@ -60,9 +60,8 @@ from app.routers import admin_job_recommendation
 from app.routers import admin_course_recommendation
 from app.routers import admin_feedback
 
-
 # =========================================================
-# APPLICATION
+# APPLICATION INITIALIZATION
 # =========================================================
 
 app = FastAPI(
@@ -71,14 +70,15 @@ app = FastAPI(
 )
 
 # =========================================================
-# CORS MIDDLEWARE (Single Unified Configuration)
+# CORS MIDDLEWARE (Explicit Origins + Regex + Preflight)
 # =========================================================
 
 origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
     "https://ai-powered-career-intelligence-plat-hazel.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 app.add_middleware(
@@ -88,8 +88,9 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=86400,
 )
-
 
 # =========================================================
 # SYSTEM / API MONITORING MIDDLEWARE
@@ -100,6 +101,10 @@ async def api_monitoring_middleware(
     request: Request,
     call_next
 ):
+    # Pass OPTIONS preflight requests directly to avoid interfering with CORS
+    if request.method == "OPTIONS":
+        return await call_next(request)
+
     start_time = time.perf_counter()
     response = None
     error_message = None
@@ -120,18 +125,18 @@ async def api_monitoring_middleware(
             "/favicon.ico",
         ]
 
-        if path not in ignored_paths and request.method != "OPTIONS":
+        if path not in ignored_paths:
             try:
                 db = SessionLocal()
                 status_code = response.status_code if response else 500
-                status = "Success" if status_code < 400 else "Failed"
+                status_str = "Success" if status_code < 400 else "Failed"
 
                 monitoring = APIMonitoring(
                     method=request.method,
                     endpoint=path,
                     status_code=status_code,
                     response_time=round(response_time, 2),
-                    status=status,
+                    status=status_str,
                     error_message=error_message
                 )
 
@@ -143,13 +148,11 @@ async def api_monitoring_middleware(
 
     return response
 
-
 # =========================================================
 # CREATE DATABASE TABLES
 # =========================================================
 
 Base.metadata.create_all(bind=engine)
-
 
 # =========================================================
 # REGISTER EXISTING ROUTERS
@@ -181,7 +184,6 @@ app.include_router(admin_job_recommendation.router)
 app.include_router(admin_course_recommendation.router)
 app.include_router(feedback.router)
 app.include_router(admin_feedback.router)
-
 
 # =========================================================
 # HOME
