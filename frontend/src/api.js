@@ -1,21 +1,23 @@
 import axios from "axios";
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Direct Live Render Backend URL
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://career-api-4nux.onrender.com";
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
 });
 
-// =====================================================
-// ATTACH JWT TOKEN TO EVERY REQUEST
-// =====================================================
-
+// Request Interceptor to attach Bearer Token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
 
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
     }
 
     return config;
