@@ -75,10 +75,19 @@ function LoginForm() {
     } catch (error) {
       console.error("Login Error:", error);
 
-      setLoginError(
-        error.response?.data?.detail ||
-          "Login failed. Please check your credentials."
-      );
+      // Safe error extraction to prevent React minified object render crash
+      const detail = error.response?.data?.detail;
+      let errorMessage = "Login failed. Please check your credentials.";
+
+      if (typeof detail === "string") {
+        errorMessage = detail;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        errorMessage = detail[0]?.msg || JSON.stringify(detail[0]);
+      } else if (typeof detail === "object" && detail !== null) {
+        errorMessage = detail.msg || JSON.stringify(detail);
+      }
+
+      setLoginError(errorMessage);
     } finally {
       setLoading(false);
     }

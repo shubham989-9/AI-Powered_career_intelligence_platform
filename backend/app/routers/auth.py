@@ -1,23 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+import secrets
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-
+from sqlalchemy.orm import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 
-import secrets
-
 from app.database import get_db
 from app.models.user import User
-
 from app.schemas.user import (
     UserCreate,
     LoginRequest,
     GoogleLoginRequest,
 )
-
 from app.schemas.change_password import ChangePassword
-
 from app.utils.security import (
     get_current_user,
     hash_password,
@@ -25,16 +20,22 @@ from app.utils.security import (
     create_access_token,
     normalize_role,
 )
-
 from app.config import GOOGLE_CLIENT_ID
-
 from app.services.platform_activity import log_activity
-
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+
+
+# =========================================================
+# HELPER: GET USER PASSWORD
+# =========================================================
+
+def _get_user_password_hash(user: User) -> str:
+    """Safely retrieves password hash across different schema attribute names."""
+    return getattr(user, "password", None) or getattr(user, "hashed_password", None) or ""
 
 
 # =========================================================
@@ -46,7 +47,6 @@ def register(
     user: UserCreate,
     db: Session = Depends(get_db)
 ):
-
     existing_user = (
         db.query(User)
         .filter(User.email == user.email)
@@ -55,26 +55,32 @@ def register(
 
     if existing_user:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
 
-    hashed_password = hash_password(
-        user.password
-    )
+    hashed_password = hash_password(user.password)
 
-    # IMPORTANT:
-    # Every normal registration is always a Student.
-    # Users cannot register as Admin.
+    # Instantiate user model matching active column definitions
+    user_kwargs = {
+        "email": user.email,
+        "role": "student"
+    }
 
-    new_user = User(
-        full_name=user.full_name,
-        email=user.email,
-        password=hashed_password,
-        role="Student",
-        is_active=True
-    )
+    if hasattr(User, "full_name"):
+        user_kwargs["full_name"] = user.full_name
+    elif hasattr(User, "name"):
+        user_kwargs["name"] = user.full_name
 
+    if hasattr(User, "password"):
+        user_kwargs["password"] = hashed_password
+    else:
+        user_kwargs["hashed_password"] = hashed_password
+
+    if hasattr(User, "is_active"):
+        user_kwargs["is_active"] = True
+
+    new_user = User(**user_kwargs)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -93,90 +99,67 @@ def login(
     data: LoginRequest,
     db: Session = Depends(get_db)
 ):
-
     user = (
         db.query(User)
-        .filter(User.email == data.email)
+        .filter(User.email == data.email.strip().lower())
         .first()
     )
 
-    # -----------------------------------------------------
-    # User does not exist
-    # -----------------------------------------------------
-
+    # Check user existence
     if not user:
-
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    # -----------------------------------------------------
-    # Account disabled
-    # -----------------------------------------------------
-
-    if not user.is_active:
-
+    # Check account active status if column exists
+    if hasattr(user, "is_active") and user.is_active is False:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account has been disabled. Please contact administrator."
         )
 
-    # -----------------------------------------------------
-    # Password verification
-    # -----------------------------------------------------
-
-    if not verify_password(
-        data.password,
-        user.password
-    ):
-
+    # Verify password hash
+    stored_hash = _get_user_password_hash(user)
+    if not verify_password(data.password, stored_hash):
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
 
-    # -----------------------------------------------------
-    # ROLE VERIFICATION
-    # -----------------------------------------------------
+    # Standardized Role Verification
+    if data.role and user.role:
+        req_role = normalize_role(data.role) if callable(normalize_role) else str(data.role).strip().lower()
+        db_role = normalize_role(user.role) if callable(normalize_role) else str(user.role).strip().lower()
 
-    if user.role and data.role:
-        if normalize_role(user.role) != normalize_role(data.role):
+        if req_role != db_role:
             raise HTTPException(
-                status_code=403,
-                detail=(
-                    f"This account is registered as "
-                    f"{user.role}. Please select the correct role."
-                )
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This account is registered as {user.role}. Please select the correct role."
             )
 
-    # -----------------------------------------------------
-    # Create JWT
-    # -----------------------------------------------------
-
+    # Generate JWT Token
     token = create_access_token(
         {
             "sub": user.email,
-            "role": user.role
+            "role": str(user.role).lower()
         }
     )
 
-    # -----------------------------------------------------
-    # PLATFORM ACTIVITY
-    # -----------------------------------------------------
+    # Log Platform Activity safely
+    try:
+        log_activity(
+            db=db,
+            user_id=user.id,
+            activity_type="Login",
+            module="Authentication",
+            description="User logged in successfully",
+            endpoint="/auth/login"
+        )
+    except Exception:
+        pass
 
-    log_activity(
-        db=db,
-        user_id=user.id,
-        activity_type="Login",
-        module="Authentication",
-        description="User logged in successfully",
-        endpoint="/auth/login"
-    )
-
-    # -----------------------------------------------------
-    # RESPONSE
-    # -----------------------------------------------------
+    user_name = getattr(user, "full_name", None) or getattr(user, "name", "User")
 
     return {
         "message": "Login Successful",
@@ -184,9 +167,9 @@ def login(
         "token_type": "bearer",
         "user": {
             "id": user.id,
-            "name": user.full_name,
+            "name": user_name,
             "email": user.email,
-            "role": user.role
+            "role": str(user.role).lower()
         }
     }
 
@@ -200,133 +183,91 @@ def google_login(
     data: GoogleLoginRequest,
     db: Session = Depends(get_db)
 ):
-
     if not GOOGLE_CLIENT_ID:
-
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Google Client ID is not configured"
         )
 
     try:
-
-        # -------------------------------------------------
-        # Verify Google ID token
-        # -------------------------------------------------
-
         idinfo = id_token.verify_oauth2_token(
             data.credential,
             google_requests.Request(),
             GOOGLE_CLIENT_ID
         )
-
     except ValueError:
-
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Google token"
         )
 
-    # -----------------------------------------------------
-    # Verify Google email
-    # -----------------------------------------------------
-
     if not idinfo.get("email_verified"):
-
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Google email is not verified"
         )
 
-    email = idinfo.get("email")
-
-    full_name = (
-        idinfo.get("name")
-        or "Google User"
-    )
+    email = idinfo.get("email", "").strip().lower()
+    full_name = idinfo.get("name") or "Google User"
 
     if not email:
-
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Google account email not available"
         )
 
-    # -----------------------------------------------------
-    # Find existing user
-    # -----------------------------------------------------
-
-    user = (
-        db.query(User)
-        .filter(User.email == email)
-        .first()
-    )
-
-    # -----------------------------------------------------
-    # Create Google account
-    # -----------------------------------------------------
+    user = db.query(User).filter(User.email == email).first()
 
     if not user:
+        random_pwd = hash_password(secrets.token_urlsafe(32))
+        create_kwargs = {
+            "email": email,
+            "role": "student"
+        }
+        if hasattr(User, "full_name"):
+            create_kwargs["full_name"] = full_name
+        elif hasattr(User, "name"):
+            create_kwargs["name"] = full_name
 
-        random_password = secrets.token_urlsafe(
-            32
-        )
+        if hasattr(User, "password"):
+            create_kwargs["password"] = random_pwd
+        else:
+            create_kwargs["hashed_password"] = random_pwd
 
-        user = User(
-            full_name=full_name,
-            email=email,
-            password=hash_password(
-                random_password
-            ),
+        if hasattr(User, "is_active"):
+            create_kwargs["is_active"] = True
 
-            # Google users are ALWAYS students.
-            role="Student",
-
-            is_active=True
-        )
-
+        user = User(**create_kwargs)
         db.add(user)
         db.commit()
         db.refresh(user)
 
-    # -----------------------------------------------------
-    # Check account status
-    # -----------------------------------------------------
-
-    if not user.is_active:
-
+    if hasattr(user, "is_active") and user.is_active is False:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Your account has been disabled. Please contact administrator."
         )
-
-    # -----------------------------------------------------
-    # Create HirePulse JWT
-    # -----------------------------------------------------
 
     token = create_access_token(
         {
             "sub": user.email,
-            "role": user.role
+            "role": str(user.role).lower()
         }
     )
 
-    # -----------------------------------------------------
-    # PLATFORM ACTIVITY
-    # -----------------------------------------------------
+    try:
+        log_activity(
+            db=db,
+            user_id=user.id,
+            activity_type="Google Login",
+            module="Authentication",
+            description="User logged in using Google",
+            endpoint="/auth/google"
+        )
+    except Exception:
+        pass
 
-    log_activity(
-        db=db,
-        user_id=user.id,
-        activity_type="Google Login",
-        module="Authentication",
-        description="User logged in using Google",
-        endpoint="/auth/google"
-    )
-
-    # -----------------------------------------------------
-    # RESPONSE
-    # -----------------------------------------------------
+    user_name = getattr(user, "full_name", None) or getattr(user, "name", "User")
 
     return {
         "message": "Google Login Successful",
@@ -334,9 +275,9 @@ def google_login(
         "token_type": "bearer",
         "user": {
             "id": user.id,
-            "name": user.full_name,
+            "name": user_name,
             "email": user.email,
-            "role": user.role
+            "role": str(user.role).lower()
         }
     }
 
@@ -350,56 +291,49 @@ def swagger_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-
     user = (
         db.query(User)
-        .filter(User.email == form_data.username)
+        .filter(User.email == form_data.username.strip().lower())
         .first()
     )
 
     if not user:
-
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Email"
         )
 
-    if not user.is_active:
-
+    if hasattr(user, "is_active") and user.is_active is False:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is disabled"
         )
 
-    if not verify_password(
-        form_data.password,
-        user.password
-    ):
-
+    stored_hash = _get_user_password_hash(user)
+    if not verify_password(form_data.password, stored_hash):
         raise HTTPException(
-            status_code=401,
+            status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid Password"
         )
 
     token = create_access_token(
         {
             "sub": user.email,
-            "role": user.role
+            "role": str(user.role).lower()
         }
     )
 
-    # -----------------------------------------------------
-    # PLATFORM ACTIVITY
-    # -----------------------------------------------------
-
-    log_activity(
-        db=db,
-        user_id=user.id,
-        activity_type="Swagger Login",
-        module="Authentication",
-        description="User logged in using Swagger",
-        endpoint="/auth/token"
-    )
+    try:
+        log_activity(
+            db=db,
+            user_id=user.id,
+            activity_type="Swagger Login",
+            module="Authentication",
+            description="User logged in using Swagger",
+            endpoint="/auth/token"
+        )
+    except Exception:
+        pass
 
     return {
         "access_token": token,
@@ -417,42 +351,38 @@ def change_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
-    if not verify_password(
-        data.current_password,
-        current_user.password
-    ):
-
+    stored_hash = _get_user_password_hash(current_user)
+    if not verify_password(data.current_password, stored_hash):
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect"
         )
 
     if data.current_password == data.new_password:
-
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="New password must be different"
         )
 
-    current_user.password = hash_password(
-        data.new_password
-    )
+    new_hash = hash_password(data.new_password)
+    if hasattr(current_user, "password"):
+        current_user.password = new_hash
+    else:
+        current_user.hashed_password = new_hash
 
     db.commit()
 
-    # -----------------------------------------------------
-    # PLATFORM ACTIVITY
-    # -----------------------------------------------------
-
-    log_activity(
-        db=db,
-        user_id=current_user.id,
-        activity_type="Password Changed",
-        module="Authentication",
-        description="User changed account password",
-        endpoint="/auth/change-password"
-    )
+    try:
+        log_activity(
+            db=db,
+            user_id=current_user.id,
+            activity_type="Password Changed",
+            module="Authentication",
+            description="User changed account password",
+            endpoint="/auth/change-password"
+        )
+    except Exception:
+        pass
 
     return {
         "message": "Password changed successfully"
