@@ -1,65 +1,36 @@
 import { Navigate } from "react-router-dom";
 
-
 function AdminProtectedRoute({ children }) {
-
   const token = localStorage.getItem("token");
-
   const userString = localStorage.getItem("user");
 
   let user = null;
-
   try {
-
-    user = userString
-      ? JSON.parse(userString)
-      : null;
-
+    user = userString ? JSON.parse(userString) : null;
   } catch {
-
     user = null;
-
   }
-
 
   // =====================================================
   // NOT LOGGED IN
   // =====================================================
-
   if (!token || !user) {
-
-    return (
-      <Navigate
-        to="/login"
-        replace
-      />
-    );
-
+    return <Navigate to="/login" replace />;
   }
 
-
   // =====================================================
-  // NOT ADMIN
+  // NOT ADMIN (Case-Insensitive Check)
   // =====================================================
+  const userRole = String(user.role || "").trim().toLowerCase();
 
-  if (user.role !== "Admin") {
-
-    return (
-      <Navigate
-        to="/dashboard"
-        replace
-      />
-    );
-
+  if (userRole !== "admin") {
+    return <Navigate to="/dashboard" replace />;
   }
 
-
   // =====================================================
-  // ADMIN
+  // ADMIN AUTHORIZED
   // =====================================================
-
   return children;
 }
-
 
 export default AdminProtectedRoute;

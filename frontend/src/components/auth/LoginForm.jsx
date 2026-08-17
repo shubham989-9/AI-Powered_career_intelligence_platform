@@ -40,7 +40,7 @@ function LoginForm() {
       const response = await api.post("/auth/login", {
         email: data.email.trim(),
         password: data.password,
-        role: selectedRole, // Passes "Student" or "Admin" directly
+        role: selectedRole,
       });
 
       // -------------------------------------------------
@@ -59,7 +59,7 @@ function LoginForm() {
       }
 
       // -------------------------------------------------
-      // Dynamic Role-Based Redirection
+      // Role-Based Redirection
       // -------------------------------------------------
       const verifiedRole = String(
         response.data?.user?.role || response.data?.role || selectedRole
