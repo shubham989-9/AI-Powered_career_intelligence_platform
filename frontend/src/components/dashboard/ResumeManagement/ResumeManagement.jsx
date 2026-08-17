@@ -19,7 +19,7 @@ function ResumeManagement() {
     if (!token) return;
 
     try {
-      const response = await axios.get("http://127.0.0.1:8000/resume/", {
+      const response = await axios.get(`${API_BASE_URL}/resume/", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -45,7 +45,7 @@ function ResumeManagement() {
 
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/resume/download/${resume.id}`,
+        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/download/${resume.id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,7 +69,7 @@ function ResumeManagement() {
   const handleDownload = async (resumeId, fileName) => {
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/resume/download/${resumeId}`,
+        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/download/${resumeId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -99,7 +99,7 @@ function ResumeManagement() {
     if (!window.confirm("Delete this resume?")) return;
 
     try {
-      await axios.delete(`http://127.0.0.1:8000/resume/${resumeId}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/${resumeId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -139,7 +139,7 @@ function ResumeManagement() {
 
       if (replaceResumeId) {
         response = await axios.put(
-          `http://127.0.0.1:8000/resume/replace/${replaceResumeId}`,
+          `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/replace/${replaceResumeId}`,
           formData,
           {
             headers: {
@@ -157,7 +157,7 @@ function ResumeManagement() {
         localStorage.removeItem("replaceResumeId");
       } else {
         response = await axios.post(
-          "http://127.0.0.1:8000/resume/upload",
+          `${API_BASE_URL}/resume/upload",
           formData,
           {
             headers: {

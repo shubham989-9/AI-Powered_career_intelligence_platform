@@ -20,7 +20,7 @@ function RecommendJobsButton({
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/job-recommendation/recommend",
+        `${API_BASE_URL}/job-recommendation/recommend",
         {
           resume_id: Number(selectedResume),
         },

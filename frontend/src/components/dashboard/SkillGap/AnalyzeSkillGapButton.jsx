@@ -20,7 +20,7 @@ function AnalyzeSkillGapButton({
       setLoading(true);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/skill-gap/analyze",
+        `${API_BASE_URL}/skill-gap/analyze",
         {
           resume_id: Number(selectedResume),
           job_description_id: Number(selectedJob),
