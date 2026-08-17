@@ -35,12 +35,12 @@ function LoginForm() {
       setLoginError("");
 
       // -------------------------------------------------
-      // Send login request with standardized lowercase role
+      // Send login request with exact role ('Student' or 'Admin')
       // -------------------------------------------------
       const response = await api.post("/auth/login", {
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
-        role: selectedRole.toLowerCase(),
+        role: selectedRole, // Passes "Student" or "Admin" directly
       });
 
       // -------------------------------------------------
@@ -75,7 +75,6 @@ function LoginForm() {
     } catch (error) {
       console.error("Login Error:", error);
 
-      // Safe error extraction to prevent React minified object render crash
       const detail = error.response?.data?.detail;
       let errorMessage = "Login failed. Please check your credentials.";
 
