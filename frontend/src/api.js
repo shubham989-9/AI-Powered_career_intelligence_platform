@@ -1,11 +1,16 @@
 import axios from "axios";
 
-// Direct Live Render Backend URL
-const API_BASE_URL =
+// Clean and sanitize base URL (removes brackets, quotes, and trailing slashes)
+const rawUrl =
   import.meta.env.VITE_API_URL || "https://career-api-4nux.onrender.com";
 
+const cleanBaseUrl = String(rawUrl)
+  .replace(/[\[\]"']/g, "")
+  .trim()
+  .replace(/\/+$/, "");
+
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: cleanBaseUrl,
 });
 
 // Request Interceptor to attach Bearer Token
