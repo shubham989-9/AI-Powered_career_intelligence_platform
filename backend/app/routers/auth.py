@@ -23,6 +23,7 @@ from app.utils.security import (
     hash_password,
     verify_password,
     create_access_token,
+    normalize_role,
 )
 
 from app.config import GOOGLE_CLIENT_ID
@@ -139,15 +140,15 @@ def login(
     # ROLE VERIFICATION
     # -----------------------------------------------------
 
-    if user.role != data.role:
-
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                f"This account is registered as "
-                f"{user.role}. Please select the correct role."
+    if user.role and data.role:
+        if normalize_role(user.role) != normalize_role(data.role):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"This account is registered as "
+                    f"{user.role}. Please select the correct role."
+                )
             )
-        )
 
     # -----------------------------------------------------
     # Create JWT

@@ -10,8 +10,16 @@ pwd_context = CryptContext(
     deprecated="auto"
 )
 
+
+def normalize_role(role):
+    if role is None:
+        return ""
+    return str(role).strip().lower()
+
+
 def hash_password(password: str):
     return pwd_context.hash(password)
+
 
 def verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
@@ -87,7 +95,7 @@ def get_current_user(
 def require_admin(
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != "Admin":
+    if normalize_role(current_user.role) != "admin":
         raise HTTPException(
             status_code=403,
             detail="Admin access required"

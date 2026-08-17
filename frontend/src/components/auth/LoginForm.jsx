@@ -11,9 +11,7 @@ import {
 import GoogleButton from "./GoogleButton";
 import api from "../../api";
 
-
 function LoginForm() {
-
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -21,137 +19,95 @@ function LoginForm() {
   const [selectedRole, setSelectedRole] = useState("Student");
   const [loginError, setLoginError] = useState("");
 
-
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
-
   // =====================================================
-  // LOGIN
+  // LOGIN SUBMIT HANDLER
   // =====================================================
 
   const onSubmit = async (data) => {
-
     try {
-
       setLoading(true);
       setLoginError("");
 
-
       // -------------------------------------------------
-      // Send login request to backend
+      // Send login request with standardized lowercase role
       // -------------------------------------------------
-
-      const response = await api.post(
-        "/auth/login",
-        {
-          email: data.email,
-          password: data.password,
-          role: selectedRole,
-        }
-      );
-
+      const response = await api.post("/auth/login", {
+        email: data.email,
+        password: data.password,
+        role: selectedRole.toLowerCase(),
+      });
 
       // -------------------------------------------------
       // Save authentication token
       // -------------------------------------------------
-
-      localStorage.setItem(
-        "token",
-        response.data.access_token
-      );
-
+      const token = response.data?.access_token || response.data?.token;
+      if (token) {
+        localStorage.setItem("token", token);
+      }
 
       // -------------------------------------------------
       // Save user information
       // -------------------------------------------------
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response.data.user)
-      );
-
-
-      // -------------------------------------------------
-      // Role-based redirect
-      // -------------------------------------------------
-
-      if (response.data.user.role === "Admin") {
-
-        navigate("/admin");
-
-      } else {
-
-        navigate("/dashboard");
-
+      if (response.data?.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
       }
 
+      // -------------------------------------------------
+      // Dynamic Role-Based Redirection
+      // -------------------------------------------------
+      const verifiedRole = String(
+        response.data?.user?.role || response.data?.role || selectedRole
+      )
+        .trim()
+        .toLowerCase();
+
+      if (verifiedRole === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
-
-      console.error(
-        "Login Error:",
-        error
-      );
-
+      console.error("Login Error:", error);
 
       setLoginError(
         error.response?.data?.detail ||
-        "Login failed. Please check your credentials."
+          "Login failed. Please check your credentials."
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
 
-
   // =====================================================
-  // ROLE CHANGE
+  // ROLE SWITCH HANDLER
   // =====================================================
 
   const handleRoleChange = (role) => {
-
     setSelectedRole(role);
     setLoginError("");
-
   };
 
-
   return (
-
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-5"
-    >
-
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* =================================================
           PAGE ROLE SELECTOR
       ================================================= */}
-
       <div>
-
         <label className="block mb-2 text-sm font-medium text-slate-200">
           Login As
         </label>
 
-
         <div className="grid grid-cols-2 gap-3">
-
-          {/* =================================================
-              STUDENT
-          ================================================= */}
-
+          {/* Student Toggle Button */}
           <button
             type="button"
-            onClick={() =>
-              handleRoleChange("Student")
-            }
+            onClick={() => handleRoleChange("Student")}
             className={`
               flex items-center justify-center gap-2
               rounded-xl
@@ -169,23 +125,14 @@ function LoginForm() {
               }
             `}
           >
-
             <UserRound size={18} />
-
             Student
-
           </button>
 
-
-          {/* =================================================
-              ADMIN
-          ================================================= */}
-
+          {/* Admin Toggle Button */}
           <button
             type="button"
-            onClick={() =>
-              handleRoleChange("Admin")
-            }
+            onClick={() => handleRoleChange("Admin")}
             className={`
               flex items-center justify-center gap-2
               rounded-xl
@@ -203,51 +150,32 @@ function LoginForm() {
               }
             `}
           >
-
             <ShieldCheck size={18} />
-
             Admin
-
           </button>
-
         </div>
-
       </div>
 
-
       {/* =================================================
-          EMAIL
+          EMAIL INPUT
       ================================================= */}
-
       <div>
-
-        <label
-          htmlFor="email"
-          className="block mb-2 text-sm text-slate-200"
-        >
+        <label htmlFor="email" className="block mb-2 text-sm text-slate-200">
           Email Address
         </label>
-
 
         <input
           id="email"
           type="email"
           autoComplete="email"
           placeholder="Enter your email"
-
           {...register("email", {
-
             required: "Email is required",
-
             pattern: {
-              value:
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message:
-                "Invalid Email Address",
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Invalid Email Address",
             },
-
           })}
-
           className={`
             w-full
             rounded-xl
@@ -266,24 +194,15 @@ function LoginForm() {
           `}
         />
 
-
         {errors.email && (
-
-          <p className="mt-1 text-sm text-red-400">
-            {errors.email.message}
-          </p>
-
+          <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
         )}
-
       </div>
 
-
       {/* =================================================
-          PASSWORD
+          PASSWORD INPUT
       ================================================= */}
-
       <div>
-
         <label
           htmlFor="password"
           className="block mb-2 text-sm text-slate-200"
@@ -291,26 +210,15 @@ function LoginForm() {
           Password
         </label>
 
-
         <div className="relative">
-
           <input
             id="password"
-            type={
-              showPassword
-                ? "text"
-                : "password"
-            }
+            type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Enter password"
-
             {...register("password", {
-
-              required:
-                "Password is required",
-
+              required: "Password is required",
             })}
-
             className={`
               w-full
               rounded-xl
@@ -330,16 +238,9 @@ function LoginForm() {
             `}
           />
 
-
-          {/* Password visibility */}
-
           <button
             type="button"
-            onClick={() =>
-              setShowPassword(
-                !showPassword
-              )
-            }
+            onClick={() => setShowPassword(!showPassword)}
             className="
               absolute
               right-4
@@ -349,66 +250,31 @@ function LoginForm() {
               hover:text-white
               transition
             "
-            aria-label={
-              showPassword
-                ? "Hide password"
-                : "Show password"
-            }
+            aria-label={showPassword ? "Hide password" : "Show password"}
           >
-
-            {showPassword ? (
-
-              <EyeOff size={20} />
-
-            ) : (
-
-              <Eye size={20} />
-
-            )}
-
+            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
-
         </div>
 
-
         {errors.password && (
-
           <p className="mt-1 text-sm text-red-400">
             {errors.password.message}
           </p>
-
         )}
-
       </div>
-
 
       {/* =================================================
           REMEMBER ME + FORGOT PASSWORD
       ================================================= */}
-
       <div className="flex items-center justify-between gap-3">
-
-        <label
-          className="
-            flex
-            items-center
-            gap-2
-            text-sm
-            text-slate-400
-            cursor-pointer
-          "
-        >
-
+        <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
           <input
             type="checkbox"
             {...register("remember")}
             className="accent-cyan-500"
           />
-
           Remember Me
-
         </label>
-
 
         <Link
           to="/forgot-password"
@@ -422,16 +288,12 @@ function LoginForm() {
         >
           Forgot Password?
         </Link>
-
       </div>
 
-
       {/* =================================================
-          LOGIN ERROR
+          LOGIN ERROR ALERT
       ================================================= */}
-
       {loginError && (
-
         <div
           className="
             rounded-xl
@@ -444,22 +306,16 @@ function LoginForm() {
             text-red-300
           "
         >
-
           {loginError}
-
         </div>
-
       )}
-
 
       {/* =================================================
           LOGIN BUTTON
       ================================================= */}
-
       <button
         type="submit"
         disabled={loading}
-
         className={`
           w-full
           rounded-xl
@@ -476,109 +332,50 @@ function LoginForm() {
           }
         `}
       >
-
-        {loading
-          ? "Signing In..."
-          : `Login as ${selectedRole}`}
-
+        {loading ? "Signing In..." : `Login as ${selectedRole}`}
       </button>
-
 
       {/* =================================================
           ADMIN INFORMATION
-          Only visible for Admin
       ================================================= */}
-
       {selectedRole === "Admin" && (
-
-        <p
-          className="
-            text-center
-            text-xs
-            text-slate-500
-          "
-        >
+        <p className="text-center text-xs text-slate-500">
           Admin access is restricted to authorized administrators.
         </p>
-
       )}
-
 
       {/* =================================================
           STUDENT ONLY SECTION
       ================================================= */}
-
       {selectedRole === "Student" && (
-
         <>
-
-          {/* =================================================
-              REGISTER
-          ================================================= */}
-
           <div className="text-center text-sm text-gray-400">
-
             <p>
-
               Don't have an account?{" "}
-
               <Link
                 to="/register"
-                className="
-                  text-cyan-400
-                  hover:text-cyan-300
-                  hover:underline
-                "
+                className="text-cyan-400 hover:text-cyan-300 hover:underline"
               >
                 Register
               </Link>
-
             </p>
-
           </div>
-
-
-          {/* =================================================
-              DIVIDER
-          ================================================= */}
 
           <div className="relative my-6">
-
             <div className="absolute inset-0 flex items-center">
-
               <div className="w-full border-t border-slate-700" />
-
             </div>
-
 
             <div className="relative flex justify-center text-sm">
-
-              <span className="bg-slate-900 px-4 text-gray-400">
-                OR
-              </span>
-
+              <span className="bg-slate-900 px-4 text-gray-400">OR</span>
             </div>
-
           </div>
 
-
-          {/* =================================================
-              GOOGLE LOGIN
-          ================================================= */}
-
-          <GoogleButton
-            text="Continue with Google"
-          />
-
+          <GoogleButton text="Continue with Google" />
         </>
-
       )}
-
     </form>
-
   );
-
 }
-
 
 export default LoginForm;
