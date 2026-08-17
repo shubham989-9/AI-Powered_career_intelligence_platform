@@ -27,7 +27,7 @@ function ATSAnalysis() {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/resume/",
+        `${API_BASE_URL}/resume/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -50,7 +50,7 @@ function ATSAnalysis() {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/job-description/",
+        `${API_BASE_URL}/job-description/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -83,7 +83,7 @@ function ATSAnalysis() {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/ats/analyze",
+        `${API_BASE_URL}/ats/analyze`,
         {
           resume_id: selectedResume,
           job_description_id: selectedJob,

@@ -19,7 +19,7 @@ function ResumeManagement() {
     if (!token) return;
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/resume/", {
+      const response = await axios.get(`${API_BASE_URL}/resume/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -157,7 +157,7 @@ function ResumeManagement() {
         localStorage.removeItem("replaceResumeId");
       } else {
         response = await axios.post(
-          `${API_BASE_URL}/resume/upload",
+          `${API_BASE_URL}/resume/upload`,
           formData,
           {
             headers: {

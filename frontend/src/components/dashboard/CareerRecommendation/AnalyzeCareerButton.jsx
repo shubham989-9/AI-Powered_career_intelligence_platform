@@ -15,7 +15,7 @@ function AnalyzeCareerButton({
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        `${API_BASE_URL}/career-recommendation/analyze",
+        `${API_BASE_URL}/career-recommendation/analyze`,
         {
           resume_id: selectedResume,
           job_description_id: selectedJob,

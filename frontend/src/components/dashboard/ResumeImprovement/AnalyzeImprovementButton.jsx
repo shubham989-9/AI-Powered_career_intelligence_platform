@@ -21,7 +21,7 @@ function AnalyzeImprovementButton({
       const token = localStorage.getItem("token");
 
       const response = await axios.post(
-        `${API_BASE_URL}/resume-improvement/analyze",
+        `${API_BASE_URL}/resume-improvement/analyze`,
         {
           resume_id: Number(selectedResume),
           job_description_id: Number(selectedJob),

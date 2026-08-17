@@ -17,7 +17,7 @@ function JobDescriptionSelector({
   const fetchJobs = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/job-description/",
+        `${API_BASE_URL}/job-description/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

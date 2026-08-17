@@ -20,7 +20,7 @@ function JobDescriptionSelector({
       setLoading(true);
 
       const response = await axios.get(
-        `${API_BASE_URL}/job-description/",
+        `${API_BASE_URL}/job-description/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
