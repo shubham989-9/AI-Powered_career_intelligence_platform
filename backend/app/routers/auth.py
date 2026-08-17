@@ -1,6 +1,7 @@
 import secrets
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -43,13 +44,15 @@ def _get_user_password_hash(user: User) -> str:
 # =========================================================
 
 @router.post("/register")
+@router.post("/register/")
 def register(
     user: UserCreate,
     db: Session = Depends(get_db)
 ):
+    cleaned_email = user.email.strip().lower()
     existing_user = (
         db.query(User)
-        .filter(User.email == user.email)
+        .filter(func.lower(User.email) == cleaned_email)
         .first()
     )
 
@@ -61,9 +64,9 @@ def register(
 
     hashed_password = hash_password(user.password)
 
-    # Instantiate user model matching active column definitions
+    # Prepare model attributes dynamically based on table columns
     user_kwargs = {
-        "email": user.email,
+        "email": cleaned_email,
         "role": "student"
     }
 
@@ -95,13 +98,15 @@ def register(
 # =========================================================
 
 @router.post("/login")
+@router.post("/login/")
 def login(
     data: LoginRequest,
     db: Session = Depends(get_db)
 ):
+    cleaned_email = data.email.strip().lower()
     user = (
         db.query(User)
-        .filter(User.email == data.email.strip().lower())
+        .filter(func.lower(User.email) == cleaned_email)
         .first()
     )
 
@@ -112,7 +117,7 @@ def login(
             detail="Invalid email or password"
         )
 
-    # Check account active status if column exists
+    # Check account active status
     if hasattr(user, "is_active") and user.is_active is False:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -129,8 +134,16 @@ def login(
 
     # Standardized Role Verification
     if data.role and user.role:
-        req_role = normalize_role(data.role) if callable(normalize_role) else str(data.role).strip().lower()
-        db_role = normalize_role(user.role) if callable(normalize_role) else str(user.role).strip().lower()
+        req_role = (
+            normalize_role(data.role)
+            if callable(normalize_role)
+            else str(data.role).strip().lower()
+        )
+        db_role = (
+            normalize_role(user.role)
+            if callable(normalize_role)
+            else str(user.role).strip().lower()
+        )
 
         if req_role != db_role:
             raise HTTPException(
@@ -139,10 +152,11 @@ def login(
             )
 
     # Generate JWT Token
+    user_role_clean = str(user.role).lower()
     token = create_access_token(
         {
             "sub": user.email,
-            "role": str(user.role).lower()
+            "role": user_role_clean
         }
     )
 
@@ -169,7 +183,7 @@ def login(
             "id": user.id,
             "name": user_name,
             "email": user.email,
-            "role": str(user.role).lower()
+            "role": user_role_clean
         }
     }
 
@@ -179,6 +193,7 @@ def login(
 # =========================================================
 
 @router.post("/google")
+@router.post("/google/")
 def google_login(
     data: GoogleLoginRequest,
     db: Session = Depends(get_db)
@@ -216,7 +231,7 @@ def google_login(
             detail="Google account email not available"
         )
 
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(func.lower(User.email) == email).first()
 
     if not user:
         random_pwd = hash_password(secrets.token_urlsafe(32))
@@ -248,10 +263,11 @@ def google_login(
             detail="Your account has been disabled. Please contact administrator."
         )
 
+    user_role_clean = str(user.role).lower()
     token = create_access_token(
         {
             "sub": user.email,
-            "role": str(user.role).lower()
+            "role": user_role_clean
         }
     )
 
@@ -277,7 +293,7 @@ def google_login(
             "id": user.id,
             "name": user_name,
             "email": user.email,
-            "role": str(user.role).lower()
+            "role": user_role_clean
         }
     }
 
@@ -287,13 +303,15 @@ def google_login(
 # =========================================================
 
 @router.post("/token")
+@router.post("/token/")
 def swagger_login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    cleaned_email = form_data.username.strip().lower()
     user = (
         db.query(User)
-        .filter(User.email == form_data.username.strip().lower())
+        .filter(func.lower(User.email) == cleaned_email)
         .first()
     )
 
@@ -316,10 +334,11 @@ def swagger_login(
             detail="Invalid Password"
         )
 
+    user_role_clean = str(user.role).lower()
     token = create_access_token(
         {
             "sub": user.email,
-            "role": str(user.role).lower()
+            "role": user_role_clean
         }
     )
 
@@ -346,6 +365,7 @@ def swagger_login(
 # =========================================================
 
 @router.post("/change-password")
+@router.post("/change-password/")
 def change_password(
     data: ChangePassword,
     db: Session = Depends(get_db),
