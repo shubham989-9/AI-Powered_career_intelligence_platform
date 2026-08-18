@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import api from "../../../api";
 
 import ResumeUpload from "./ResumeUpload";
 import ResumeList from "./ResumeList";
@@ -44,54 +45,37 @@ function ResumeManagement() {
     setSelectedResume(resume);
 
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/download/${resume.id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          responseType: "blob",
-        }
-      );
-
-      const file = new Blob([response.data], {
-        type: "application/pdf",
+      const token = localStorage.getItem("token");
+      const response = await api.get(`/resume/view/${resume.id}?token=${token}`, {
+        responseType: "blob",
       });
 
+      const file = new Blob([response.data], { type: "application/pdf" });
       const fileURL = URL.createObjectURL(file);
-
       window.open(fileURL, "_blank");
-    } catch {
+    } catch (error) {
+      console.error("Error viewing resume:", error);
       alert("Unable to open resume");
     }
   };
 
   const handleDownload = async (resumeId, fileName) => {
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/download/${resumeId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          responseType: "blob",
-        }
-      );
+      const token = localStorage.getItem("token");
+      const response = await api.get(`/resume/download/${resumeId}?token=${token}`, {
+        responseType: "blob",
+      });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
-
       const link = document.createElement("a");
-
       link.href = url;
-      link.download = fileName || "resume.pdf";
-
+      link.setAttribute("download", fileName || "resume.pdf");
       document.body.appendChild(link);
-
       link.click();
-
       link.remove();
-    } catch {
-      alert("Download Failed");
+    } catch (error) {
+      console.error("Error downloading resume:", error);
+      alert("Unable to download resume");
     }
   };
 

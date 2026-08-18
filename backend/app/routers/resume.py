@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import os
 import uuid
+from typing import Optional
 
 from fastapi import (
     APIRouter,
@@ -9,10 +10,9 @@ from fastapi import (
     UploadFile,
     File,
     HTTPException,
+    Query,
 )
-
 from fastapi.responses import FileResponse
-
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -21,7 +21,6 @@ from app.models.user import User
 from app.utils.security import get_current_user
 from app.services.resume_parser import parse_resume
 from app.services.ats_score import calculate_ats_score
-
 
 router = APIRouter(
     prefix="/resume",
@@ -32,8 +31,26 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 
+# Helper function to get user from Header OR Query Token
+def get_user_from_header_or_token(
+    token: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    if token:
+        try:
+            from app.utils.security import decode_token
+            payload = decode_token(token)
+            if payload and "sub" in payload:
+                user = db.query(User).filter(User.email == payload["sub"]).first()
+                if user:
+                    return user
+        except Exception:
+            pass
+    return None
+
+
 # ==========================================================
-# Upload Resume (Multiple Resume Support)
+# Upload Resume
 # ==========================================================
 
 @router.post("/upload")
@@ -42,7 +59,6 @@ def upload_resume(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
     ext = Path(file.filename).suffix.lower()
 
     if ext not in [".pdf", ".doc", ".docx"]:
@@ -63,7 +79,7 @@ def upload_resume(
     # ATS Score
     ats = calculate_ats_score(parsed["raw_text"])
 
-    # ALWAYS create new resume
+    # Create new resume record
     resume = Resume(
         user_id=current_user.id,
         file_name=filename,
@@ -99,7 +115,6 @@ def get_resumes(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
     resumes = (
         db.query(Resume)
         .filter(
@@ -112,7 +127,6 @@ def get_resumes(
     response = []
 
     for resume in resumes:
-
         ats = calculate_ats_score(
             resume.raw_text or ""
         )
@@ -141,15 +155,21 @@ def get_resumes(
 @router.get("/view/{resume_id}")
 def view_resume(
     resume_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
 ):
+    user = get_user_from_header_or_token(token, db)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required to view resume."
+        )
 
     resume = (
         db.query(Resume)
         .filter(
             Resume.id == resume_id,
-            Resume.user_id == current_user.id
+            Resume.user_id == user.id
         )
         .first()
     )
@@ -163,13 +183,16 @@ def view_resume(
     if not os.path.exists(resume.file_path):
         raise HTTPException(
             status_code=404,
-            detail="Resume file not found."
+            detail="Resume file not found on server."
         )
 
     return FileResponse(
         path=resume.file_path,
-        media_type="application/pdf"
+        media_type="application/pdf",
+        headers={"Content-Disposition": "inline"}
     )
+
+
 # ==========================================================
 # Download Resume
 # ==========================================================
@@ -177,15 +200,21 @@ def view_resume(
 @router.get("/download/{resume_id}")
 def download_resume(
     resume_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
 ):
+    user = get_user_from_header_or_token(token, db)
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required to download resume."
+        )
 
     resume = (
         db.query(Resume)
         .filter(
             Resume.id == resume_id,
-            Resume.user_id == current_user.id
+            Resume.user_id == user.id
         )
         .first()
     )
@@ -199,13 +228,14 @@ def download_resume(
     if not os.path.exists(resume.file_path):
         raise HTTPException(
             status_code=404,
-            detail="Resume file not found."
+            detail="Resume file not found on server."
         )
 
     return FileResponse(
         path=resume.file_path,
         filename=resume.file_name,
-        media_type="application/pdf"
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{resume.file_name}"'}
     )
 
 
@@ -219,7 +249,6 @@ def delete_resume(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
     resume = (
         db.query(Resume)
         .filter(
@@ -260,7 +289,6 @@ def replace_resume(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-
     resume = (
         db.query(Resume)
         .filter(
