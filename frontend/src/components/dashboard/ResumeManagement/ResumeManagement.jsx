@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import api from "../../../api";
 
 import ResumeUpload from "./ResumeUpload";
@@ -20,15 +19,10 @@ function ResumeManagement() {
     if (!token) return;
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/resume/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get("/resume/");
+      setResumes(response.data || []);
 
-      setResumes(response.data);
-
-      if (response.data.length > 0) {
+      if (response.data && response.data.length > 0) {
         setSelectedResume(response.data[0]);
       }
     } catch {
@@ -50,8 +44,9 @@ function ResumeManagement() {
         responseType: "blob",
       });
 
-      const file = new Blob([response.data], { type: "application/pdf" });
-      const fileURL = URL.createObjectURL(file);
+      const contentType = response.headers["content-type"] || "application/pdf";
+      const fileBlob = new Blob([response.data], { type: contentType });
+      const fileURL = window.URL.createObjectURL(fileBlob);
       window.open(fileURL, "_blank");
     } catch (error) {
       console.error("Error viewing resume:", error);
@@ -83,14 +78,8 @@ function ResumeManagement() {
     if (!window.confirm("Delete this resume?")) return;
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/${resumeId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
+      await api.delete(`/resume/${resumeId}`);
       await fetchResumes();
-
       alert("Resume Deleted Successfully");
     } catch {
       alert("Delete Failed");
@@ -99,7 +88,6 @@ function ResumeManagement() {
 
   const handleReplace = (resumeId) => {
     localStorage.setItem("replaceResumeId", resumeId);
-
     document.getElementById("resume-upload")?.click();
   };
 
@@ -114,53 +102,38 @@ function ResumeManagement() {
 
     try {
       const formData = new FormData();
-
       formData.append("file", file);
 
       const replaceResumeId = localStorage.getItem("replaceResumeId");
-
       let response;
 
       if (replaceResumeId) {
-        response = await axios.put(
-          `${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/resume/replace/${replaceResumeId}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-            onUploadProgress: (e) => {
-              if (e.total) {
-                setUploadProgress(Math.round((e.loaded * 100) / e.total));
-              }
-            },
-          }
-        );
-
+        response = await api.put(`/resume/replace/${replaceResumeId}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (e) => {
+            if (e.total) {
+              setUploadProgress(Math.round((e.loaded * 100) / e.total));
+            }
+          },
+        });
         localStorage.removeItem("replaceResumeId");
       } else {
-        response = await axios.post(
-          `${API_BASE_URL}/resume/upload`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-            onUploadProgress: (e) => {
-              if (e.total) {
-                setUploadProgress(Math.round((e.loaded * 100) / e.total));
-              }
-            },
-          }
-        );
+        response = await api.post("/resume/upload", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (e) => {
+            if (e.total) {
+              setUploadProgress(Math.round((e.loaded * 100) / e.total));
+            }
+          },
+        });
       }
 
-      setStatus(response.data.message || "Success");
-
+      setStatus(response.data?.message || "Success");
       setFile(null);
-
       fetchResumes();
     } catch (err) {
       alert(err?.response?.data?.detail || "Upload Failed");
